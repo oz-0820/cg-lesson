@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/three@0.137.4/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.137.4/examples/js/controls/OrbitControls.js"></script>
+
+    <title>コンピューターグラフィックス 第6回</title>
+</head>
+<body>
+    <div>
+        <h1>コンピューターグラフィックス 第6回</h1>
+        <p>2022年5月23日</p>
+        <p>学籍番号: 2032037</p>
+        <a href="../index.html">提出物一覧</a>
+    </div>
+    <br><br>
+    <p style="color: red">だんだんズレます。</p>
+    <p>腕と足を動かして足踏みさせたかったんですが、クローンしたモデルを一括で動かすことが出来ませんでした……</p>
+<!--
+        <label><input type="checkbox" id="isRotate">カメラ回転</label>
+        <br>
+        <label for="speed">速度: </label><input style="width: 50px" type="number" step="0.5" id="speed" value="0.5">度/frame
+        <br><br>
+-->
+        カメラ位置: <dev id="CameraPosition"></dev>
+        <br>
+    <div id="render">
+    </div>
+
+    <script>
+
+        // ページの読み込みを待つ
+        window.addEventListener('DOMContentLoaded', init);
+
+        function init() {
+            // サイズを指定
+            let width = 800
+            let height = 600;
+
+            // 一応小さくする
+            if (width > window.innerWidth) {
+                width = window.innerWidth;
+            }
+            if (height > window.innerWidth) {
+                height = window.innerHeight;
+            }
+
+            // レンダラーを作成
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setClearColor(new THREE.Color('lightgray'));
+            renderer.setSize(width, height);
+
+            renderer.shadowMap.enabled = true;
+
+            const render_div = document.getElementById("render");
+            render_div.appendChild(renderer.domElement);
+            renderer.setSize(width, height);
+
+            // シーンを作成
+            const scene = new THREE.Scene();
+
+            // カメラを作成
+            const camera = new THREE.PerspectiveCamera(45, width / height);
+            // カメラの初期座標を設定
+            camera.position.set(0,13,13);
+            camera.lookAt(0,0,0);
+
+            // カメラコントローラーを作成
+            const controls = new THREE.OrbitControls(camera, document.body);
+
+            // 照明を作成SpotLight(色, 光の強さ, 距離, 照射角, ボケ具合, 減衰率)
+            let light1 = new THREE.SpotLight(0xff0000, 3, 100, Math.PI / 15, 0.2);
+            light1.position.set(15,15, 15);
+            // ライトに影を有効にする
+            light1.castShadow = true;
+            scene.add(light1);
+
+            let light2 = new THREE.SpotLight(0x00ff00, 3, 100, Math.PI / 15, 0.2);
+            light2.position.set(15,15, -15);
+            // ライトに影を有効にする
+            light2.castShadow = true;
+            scene.add(light2);
+
+            let light3 = new THREE.SpotLight(0x0000ff, 3, 100, Math.PI / 15, 0.2);
+            light3.position.set(-15,15, 15);
+            // ライトに影を有効にする
+            light3.castShadow = true;
+            scene.add(light3);
+
+
+            // 平行光源(色、強さ）主光源
+            let directionalLightM = new THREE.DirectionalLight(0xffffff,0.3);
+            directionalLightM.position.set(0, 100, 0);
+            //シーンに追加
+            scene.add(directionalLightM);
+            
+
+            // helper
+            const gridHelper = new THREE.GridHelper(20,10); // size, step
+            scene.add(gridHelper);
+            const axisHelper = new THREE.AxisHelper(5); //軸の長さ　X：赤、Y：緑、z：青
+            scene.add(axisHelper);
+
+            // 平面を作成
+            let planeGeometry = new THREE.PlaneGeometry(25,25);
+            let planeMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            let plane = new THREE.Mesh(planeGeometry,planeMaterial);
+            plane.receiveShadow  = true; //影がつく
+            plane.rotation.set( -Math.PI/2, 0, 0 );
+            plane.position.set(0,0,-2);
+            scene.add(plane);
+
+
+            // いろいろなマテリアルの実験
+            let material = new THREE.MeshPhongMaterial({ color: 0x0000ff, specular:0xffff00, shininess:4 });
+
+            // 頭を作成
+            let head_g = new THREE.SphereGeometry( 0.5, 32, 32 );
+            let head = new THREE.Mesh(head_g, material);
+            head.position.set(0,1.2,0);//allの中心が原点になる
+            head.castShadow = true;
+
+            //体を作成
+            let body_g = new THREE.SphereGeometry( 0.6, 32, 32 );
+            //let material_r = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            let body = new THREE.Mesh( body_g, material);
+            body.scale.y =1.5;
+            body.position.set(0,0,0);
+            body.castShadow = true;
+
+            //左足を作成
+            let leg_g = new THREE.SphereGeometry( 0.25, 32, 32 );
+            let lleg = new THREE.Mesh( leg_g, material);
+            lleg.scale.z = 2;
+            lleg.scale.y = 0.7;
+            lleg.position.set(0.3,-0.8,0.2);
+            lleg.castShadow = true;
+
+            //右足を作成
+            let rleg = new THREE.Mesh( leg_g, material);
+            rleg.scale.z = 2;
+            rleg.scale.y = 0.7;
+            rleg.position.set(-0.3,-0.8,0.2);
+            rleg.castShadow = true;
+
+            //左羽を作成
+            let win_g = new THREE.SphereGeometry( 0.7, 32, 32 );
+            let lwin = new THREE.Mesh( win_g, material);
+            lwin.scale.x = 0.2;
+            lwin.scale.z = 0.5;
+            lwin.rotation.z = 0.5;
+            lwin.position.set(0.65,0.15,0);
+            lwin.castShadow = true;
+
+            //右羽を作成
+            let rwin = new THREE.Mesh( win_g, material);
+            rwin.scale.x = 0.2;
+            rwin.scale.z = 0.5;
+            rwin.rotation.z = -0.5;
+            rwin.position.set(-0.65,0.15,0);
+            rwin.castShadow = true;
+
+            //くちばしの作成
+            let beak_g = new THREE.ConeGeometry( 0.1, 0.5, 32 );
+            let material_beak = new THREE.MeshPhongMaterial({ color: 0xffff00 });
+            let beak = new THREE.Mesh( beak_g, material_beak);
+            beak.rotation.x = 1.5;
+            beak.position.set(0,1,0.6);
+            beak.castShadow = true;
+
+            //左目
+            let eye_g = new THREE.SphereGeometry( 0.1, 32, 32 );
+            let material_eye = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            let l_eye = new THREE.Mesh( eye_g, material_eye);
+            l_eye.position.set(0.2,1.3,0.35);
+            l_eye.castShadow = true;
+
+            //右目
+            let r_eye = new THREE.Mesh( eye_g, material_eye);
+            r_eye.position.set(-0.2,1.3,0.35);
+            r_eye.castShadow = true;
+
+            //ペンギンのオブジェクト
+            const pengin = new THREE.Group();
+            pengin.add(head); // 頭を追加
+            pengin.add(body); //体を追加
+            pengin.add(lleg); //左足を追加
+            pengin.add(rleg); //右足を追加
+            pengin.add(lwin); //左羽を追加
+            pengin.add(rwin); //右羽を追加
+            pengin.add(beak); //くちばし
+            pengin.add(l_eye); //左目
+            pengin.add(r_eye); //右目
+            pengin.position.set(0,1,0);//ペンギングループの原点の位置
+
+
+            const gr1 = new THREE.Group();
+            const gr2 = new THREE.Group();
+            for (let i=-4; i<5; i++) {
+                let hoge = pengin.clone()
+                hoge.position.set(i*2,1,0)
+                if (i%2 === 0) {
+                    gr1.add(hoge);
+                } else {
+                    gr2.add(hoge);
+                }
+            }
+
+            scene.add(gr1);
+            scene.add(gr2);
+
+            let rotate = 0;
+            let phase = 1;
+
+            update();
+
+            // 毎フレーム時に実行されるループイベントです
+            function update() {
+                // レンダリング
+                renderer.render(scene, camera);
+                requestAnimationFrame(update);
+
+                // フェーズごとに良い感じに回す
+                if (phase === 1) {
+                    re_gr1_y(0.02);
+                    re_gr2_y(-0.02);
+                } else if (phase === 2) {
+                    re_gr1_y(0.02);
+                    re_gr2_y(0.02);
+                } else if (phase === 3) {
+                    re_gr1_y(-0.02);
+                    re_gr2_y(-0.02);
+                }
+
+                // フェーズの移行
+                if (Math.abs(rotate) > 2*Math.PI) {
+                    phase += 1;
+                    rotate = 0;
+                }
+                // 先頭に戻す
+                if (phase === 4) {
+                    phase = 1;
+                }
+
+                // カメラの位置と距離をラベルに書き込み
+                let cp = camera.position;
+                document.getElementById("CameraPosition").textContent = "[" + cp.x.toFixed(3) + ", " + cp.y.toFixed(3) + ", " + cp.z.toFixed(3) + "]";
+            }
+
+            // 関数化してちょっと楽にしたつもり
+            function re_gr1_y(rt) {
+                gr1.rotation.y += rt;
+                rotate += rt;
+            }
+
+            function re_gr2_y(rt) {
+                gr2.rotation.y += rt;
+            }
+        }
+
+    </script>
+
+</body>
+</html>
