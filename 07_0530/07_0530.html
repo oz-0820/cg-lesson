@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/three@0.137.4/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.137.4/examples/js/controls/OrbitControls.js"></script>
+
+    <title>コンピューターグラフィックス 第7回</title>
+</head>
+<body>
+<div>
+    <h1>コンピューターグラフィックス 第7回</h1>
+    <p>2022年5月30日</p>
+    <p>学籍番号: 2032037</p>
+    <a href="../index.html">提出物一覧</a>
+</div>
+<br><br>
+カメラ位置: <dev id="CameraPosition"></dev>
+<br>
+<div id="render">
+</div>
+
+<script>
+
+    // ページの読み込みを待つ
+    window.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+        // サイズを指定
+        const width = 800
+        const height = 600;
+
+        // レンダラーを作成
+        let renderer = new THREE.WebGLRenderer();
+        document.body.appendChild(renderer.domElement);
+        renderer.setSize(width, height);
+
+        // シーンを作成
+        const scene = new THREE.Scene();
+
+        // カメラを作成
+        const camera = new THREE.PerspectiveCamera(45, width / height);
+        // カメラの初期座標を設定
+        camera.position.set(10, 10, 10);
+
+        // カメラコントローラーを作成
+        const controls = new THREE.OrbitControls(camera, document.body);
+
+        // 平行光源1
+        let directionalLight1 = new THREE.DirectionalLight(0xffffff);
+        directionalLight1.position.set(100, 100, 100);
+        // シーンに追加
+        scene.add(directionalLight1);
+        // 平行光源2
+        let directionalLight2 = new THREE.DirectionalLight(0x888888);
+        directionalLight2.position.set(-100, -100, 100);
+        // シーンに追加
+        scene.add(directionalLight2);
+
+        /*
+        // helper
+        const gridHelper = new THREE.GridHelper(2,10); // size, step
+        scene.add(gridHelper);
+        const axisHelper = new THREE.AxisHelper(2); //軸の長さ　X：赤、Y：緑、z：青
+        scene.add(axisHelper);
+        */
+
+        // テクスチャー読み込み
+        let textureLoader = new THREE.TextureLoader();
+        let texture1 = textureLoader.load("./img/cit.png");
+        let texture2 = textureLoader.load("./img/stone.jpg");
+        let mat1 = new THREE.MeshPhongMaterial();
+        let mat2 = new THREE.MeshPhongMaterial();
+        mat1.map = texture1;
+        mat2.map = texture2;
+
+
+        let geometry01 = new THREE.BoxGeometry(3, 3, 3);
+        let geometry02 = new THREE.ConeGeometry(2, 3, 8);
+        let geometry03 = new THREE.SphereGeometry(1, 32, 32)
+        //let material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        //let box = new THREE.Mesh(geometry1, material);
+        let box = new THREE.Mesh(geometry01, mat1);
+        let cone_tx = new THREE.Mesh(geometry02, mat2);
+        let sphere_tx = new THREE.Mesh(geometry03, mat2);
+        box.position.set(0,0,0); //位置を指定
+        cone_tx.position.set(5, 0, 0);
+        sphere_tx.position.set(4, 5, 0);
+        scene.add(box);
+        scene.add(cone_tx);
+        scene.add(sphere_tx);
+
+
+        // バンプマップ読み込み
+        let texture3 = textureLoader.load("./img/stone-bump.jpg");
+        let mat3 = new THREE.MeshPhongMaterial();
+        mat3.map = texture3;
+        mat3.bumpMap = textureLoader.load("./img/stone-bump.jpg");
+        mat3.bumpscale = 0.2;
+
+        let geometry11 = new THREE.ConeGeometry(2, 3, 8);
+        let cone_bump = new THREE.Mesh(geometry11, mat3);
+        cone_bump.position.set(0, 0, 5);
+        scene.add(cone_bump);
+
+        let geometry12 = new THREE.SphereGeometry(1, 32, 32);
+        let sphere_bump = new THREE.Mesh(geometry12, mat3);
+        sphere_bump.position.set(0, 5, 4);
+        scene.add(sphere_bump);
+
+        update();
+
+        // 毎フレーム時に実行されるループイベントです
+        function update() {
+            // レンダリング
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+
+            // 箱を回転させる
+            box.rotation.x += 0.01;
+            box.rotation.y += 0.01;
+            cone_tx.rotation.x -= 0.01;
+            cone_tx.rotation.y += 0.01;
+            cone_bump.rotation.x -= 0.01;
+            cone_bump.rotation.z += 0.01;
+            sphere_tx.rotation.y += 0.01;
+            sphere_bump.rotation.y -= 0.01;
+
+            // カメラの位置と距離をラベルに書き込み
+            let cp = camera.position;
+            document.getElementById("CameraPosition").textContent = "[" + cp.x.toFixed(3) + ", " + cp.y.toFixed(3) + ", " + cp.z.toFixed(3) + "]";
+        }
+    }
+</script>
+
+</body>
+</html>
