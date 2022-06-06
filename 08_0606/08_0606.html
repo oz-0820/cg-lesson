@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/three@0.137.4/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.137.4/examples/js/controls/OrbitControls.js"></script>
+    <title>コンピューターグラフィックス 第8回</title>
+</head>
+<body>
+<div>
+    <h1>コンピューターグラフィックス 第8回</h1>
+    <h2>ビルボード</h2>
+    <p>2022年06月06日 学籍番号: 2032037</p>
+    <br>
+    <a>スティーブの頭だけビルボードを使ってみた。<br>一見普通に見えるが頭だけペラペラである。
+        <br>UVを使いたかったが、よくわからなかったのでゴリ押し実装した。</a>
+</div>
+<br><br>
+カメラ位置: <dev id="CameraPosition"></dev>
+<br>
+<div id="render">
+</div>
+
+<script>
+    // ページの読み込みを待つ
+    window.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+        // サイズを指定
+        const width = 800
+        const height = 600;
+
+        // レンダラーを作成
+        let renderer = new THREE.WebGLRenderer();
+        document.body.appendChild(renderer.domElement);
+        renderer.setSize(width, height);
+        // 背景の色を設定
+        renderer.setClearColor(0xffffdd);
+
+
+        // シーンを作成
+        const scene = new THREE.Scene();
+
+        // カメラを作成
+        const camera = new THREE.PerspectiveCamera(45, width / height);
+        // カメラの初期座標を設定
+        camera.position.set(0, 10, 20);
+
+        // カメラコントローラーを作成
+        const controls = new THREE.OrbitControls(camera, document.body);
+
+        // 平行光源1
+        let directionalLight1 = new THREE.DirectionalLight(0xffffff);
+        directionalLight1.position.set(100, 100, 100);
+        // シーンに追加
+        scene.add(directionalLight1);
+        // 平行光源2
+        let directionalLight2 = new THREE.DirectionalLight(0x888888);
+        directionalLight2.position.set(-100, -100, 100);
+        // シーンに追加
+        scene.add(directionalLight2);
+
+        /*
+        // helper
+        const gridHelper = new THREE.GridHelper(2,10); // size, step
+        scene.add(gridHelper);
+        const axisHelper = new THREE.AxisHelper(2); //軸の長さ　X：赤、Y：緑、z：青
+        scene.add(axisHelper);
+        */
+
+
+        let textureLoader = new THREE.TextureLoader();
+
+        // 地面を作る
+        let stone_top = textureLoader.load("./img/stone_slab_top.png");
+        let stone_side = textureLoader.load("./img/stone_slab_side.png");
+        let stone_mat = [
+            new THREE.MeshBasicMaterial({map: stone_side}), // 右
+            new THREE.MeshBasicMaterial({map: stone_side}), // 左
+            new THREE.MeshBasicMaterial({map: stone_top}), // 上
+            new THREE.MeshBasicMaterial({map: stone_top}), // 下
+            new THREE.MeshBasicMaterial({map: stone_side}), // 手前
+            new THREE.MeshBasicMaterial({map: stone_side}) // 奥
+        ]
+        let stone = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        for (let i=-5; i<=5; i++) {
+            for (let j=-5; j<=5; j++) {
+                let stone_mesh = new THREE.Mesh(stone, stone_mat);
+                stone_mesh.position.set(i*1.5, -1.5, j*1.5);
+                scene.add(stone_mesh);
+            }
+        }
+
+        // スティーブ君を作る
+        let group = new THREE.Group();
+
+        // 胴体
+        let body_mat = [
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_body_right.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_body_left.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_body_top.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_body_bottom.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_body_front.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_body_back.png")})
+
+        ];
+        let body = new THREE.BoxGeometry(1, 1.5, 0.5);
+        let body_mesh = new THREE.Mesh(body, body_mat);
+        body_mesh.position.set(0, 1.5, 1);
+        group.add(body_mesh);
+
+        // 右腕
+        let arm_mat = [
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_arm_right.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_arm_left.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_arm_top.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_arm_bottom.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_arm_front.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_arm_back.png")})
+        ];
+        let arm = new THREE.BoxGeometry(0.5, 1.5, 0.5);
+        let arm_right_mesh = new THREE.Mesh(arm, arm_mat);
+        arm_right_mesh.position.set(-0.76, 1.5, 1);
+        group.add(arm_right_mesh);
+
+        // 左腕
+        let arm_left_mesh = new THREE.Mesh(arm, arm_mat);
+        arm_left_mesh.position.set(0.76, 1.5, 1);
+        group.add(arm_left_mesh);
+
+        // 右足
+        let reg_mat = [
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_reg_r_right.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_reg_r_left.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_reg_r_top.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_reg_r_bottom.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_reg_r_front.png")}),
+            new THREE.MeshBasicMaterial({map: textureLoader.load("./img/st_reg_r_back.png")})
+        ];
+        let r_reg = new THREE.BoxGeometry(0.5, 1.5, 0.5);
+        let r_reg_mesh = new THREE.Mesh(r_reg, reg_mat);
+        r_reg_mesh.position.set(-0.26, 0, 1);
+        group.add(r_reg_mesh);
+
+        // 左足
+        let l_reg_mesh = new THREE.Mesh(r_reg, reg_mat);
+        l_reg_mesh.position.set(0.26, 0, 1);
+        group.add(l_reg_mesh);
+
+
+        // 頭
+        let sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: textureLoader.load("./img/st_head_front.png")}))
+        sprite.scale.set(1, 1, 1);
+        sprite.position.set(0, 2.7, 1)
+        group.add(sprite);
+
+        // いっぱい配置する
+        for (let i=-2; i<=2; i++) {
+            for (let j=-2; j<=2; j++) {
+                let c = group.clone();
+                c.position.set(i*3, 0, j*3);
+                scene.add(c);
+            }
+        }
+
+
+        update();
+
+        // 毎フレーム時に実行されるループイベントです
+        function update() {
+            // レンダリング
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+
+            // カメラの位置と距離をラベルに書き込み
+            let cp = camera.position;
+            document.getElementById("CameraPosition").textContent = "[" + cp.x.toFixed(3) + ", " + cp.y.toFixed(3) + ", " + cp.z.toFixed(3) + "]";
+        }
+    }
+</script>
+
+</body>
+</html>
