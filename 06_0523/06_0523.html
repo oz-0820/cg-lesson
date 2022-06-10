@@ -67,7 +67,7 @@
             camera.lookAt(0,0,0);
 
             // カメラコントローラーを作成
-            const controls = new THREE.OrbitControls(camera, document.body);
+            const controls = new THREE.OrbitControls(camera, render_div);
 
             // 照明を作成SpotLight(色, 光の強さ, 距離, 照射角, ボケ具合, 減衰率)
             let light1 = new THREE.SpotLight(0xff0000, 3, 100, Math.PI / 15, 0.2);

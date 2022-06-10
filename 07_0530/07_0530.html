@@ -32,7 +32,8 @@
 
         // レンダラーを作成
         let renderer = new THREE.WebGLRenderer();
-        document.body.appendChild(renderer.domElement);
+        const render = document.getElementById("render");
+        render.appendChild(renderer.domElement);
         renderer.setSize(width, height);
 
         // シーンを作成
@@ -44,7 +45,7 @@
         camera.position.set(10, 10, 10);
 
         // カメラコントローラーを作成
-        const controls = new THREE.OrbitControls(camera, document.body);
+        const controls = new THREE.OrbitControls(camera, render);
 
         // 平行光源1
         let directionalLight1 = new THREE.DirectionalLight(0xffffff);

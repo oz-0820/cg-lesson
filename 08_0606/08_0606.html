@@ -11,6 +11,8 @@
     <h1>コンピューターグラフィックス 第8回</h1>
     <h2>ビルボード</h2>
     <p>2022年06月06日 学籍番号: 2032037</p>
+    <a href="../index.html">提出物一覧</a>
+
     <br>
     <a>スティーブの頭だけビルボードを使ってみた。<br>一見普通に見えるが頭だけペラペラである。
         <br>UVを使いたかったが、よくわからなかったのでゴリ押し実装した。</a>
@@ -18,7 +20,7 @@
 <br><br>
 カメラ位置: <dev id="CameraPosition"></dev>
 <br>
-<div id="render">
+<div id="render_space">
 </div>
 
 <script>
@@ -32,7 +34,9 @@
 
         // レンダラーを作成
         let renderer = new THREE.WebGLRenderer();
-        document.body.appendChild(renderer.domElement);
+
+        const render_space = document.getElementById("render_space");
+        render_space.appendChild(renderer.domElement);
         renderer.setSize(width, height);
         // 背景の色を設定
         renderer.setClearColor(0xffffdd);
@@ -47,7 +51,7 @@
         camera.position.set(0, 10, 20);
 
         // カメラコントローラーを作成
-        const controls = new THREE.OrbitControls(camera, document.body);
+        const controls = new THREE.OrbitControls(camera, render_space);
 
         // 平行光源1
         let directionalLight1 = new THREE.DirectionalLight(0xffffff);
