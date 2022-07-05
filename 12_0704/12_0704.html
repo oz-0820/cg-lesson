@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/three@0.137.4/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.137.4/examples/js/controls/OrbitControls.js"></script>
+    <title>コンピューターグラフィックス 最終課題</title>
+</head>
+<body>
+<div>
+    <h1>コンピューターグラフィックス 最終課題</h1>
+    <h2>なんか色々</h2>
+    <p>2022年07月05日 学籍番号: 2032037</p>
+    <h3><a href="../index.html">提出物一覧</a></h3>
+
+    <br>
+    <a>講義で扱った手法を大体網羅した。コンセプトは特にありません。</a><br>
+    <a>リロードするとペンギンの色が変わりますが、なんか全体的にくすんだ色になります。仕様です。</a><br>
+    <a>ついでに生えてる木の種類も変わります。</a><br><br>
+    <a>テクスチャ引用<br>https://www.deviantart.com/hhh316/art/Rough-Sand-Texture-Seamless-347828772<br>https://www.photo-ac.com/main/detail/24361700<br>https://illustimage.com/?id=6091</a>
+</div>
+<br><br>
+カメラ位置: <dev id="CameraPosition"></dev>
+<br>
+<div id="render_space">
+</div>
+
+<script>
+    // ページの読み込みを待つ
+    window.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+        // サイズを指定
+        const width = 800
+        const height = 600;
+
+        // レンダラーを作成
+        let renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true
+        });
+
+        const render_space = document.getElementById("render_space");
+        render_space.appendChild(renderer.domElement);
+        renderer.setSize(width, height);
+        // 背景の色を設定
+        renderer.setClearColor(0x555555);
+
+
+        // シーンを作成
+        const scene = new THREE.Scene();
+        {
+            const color = 0xFFFFFF;
+            const near = 15;
+            const far = 300;
+            scene.fog = new THREE.Fog(color, near, far);
+        }
+
+        // カメラを作成
+        const camera = new THREE.PerspectiveCamera(45, width / height);
+        // カメラの初期座標を設定
+        camera.position.set(80, 50, 80);
+
+        // カメラコントローラーを作成
+        const controls = new THREE.OrbitControls(camera, render_space);
+
+        // 平行光源1
+        let directionalLight1 = new THREE.DirectionalLight(0xffffff);
+        directionalLight1.position.set(100, 200, 100);
+        // シーンに追加
+        scene.add(directionalLight1);
+        // 平行光源2
+        let directionalLight2 = new THREE.DirectionalLight(0xffffff);
+        directionalLight2.position.set(-100, 100, -100);
+        // シーンに追加
+        scene.add(directionalLight2);
+
+
+/*
+        // helper
+        const gridHelper = new THREE.GridHelper(2,10); // size, step
+        scene.add(gridHelper);
+        const axisHelper = new THREE.AxisHelper(2); //軸の長さ　X：赤、Y：緑、z：青
+        scene.add(axisHelper);
+*/
+
+        let textureLoader = new THREE.TextureLoader();
+        let tex1 = textureLoader.load("./img/stone.jpg");
+        let sand = textureLoader.load("./img/rough_sand_texture_seamless_by_hhh316_d5r36ec-fullview.jpg");
+        let galvalume = textureLoader.load("./img/24361700_l.jpg");
+        let wall_mat = new THREE.MeshPhongMaterial();
+        wall_mat.map = tex1;
+
+        // 地面
+        let earth_group = new THREE.Group();
+        let earth_geo = new THREE.PlaneGeometry(10, 10, 1, 1);
+        let earth_mat = new THREE.MeshPhongMaterial();
+        earth_mat.map = sand;
+        let e_mesh = new THREE.Mesh(earth_geo, earth_mat);
+        e_mesh.position.set(-100, -2, 100);
+        e_mesh.rotation.x -= Math.PI*0.5;
+
+        for (let i=0; i<20; i++) {
+            for (let j=0; j<20; j++) {
+                let tmp = e_mesh.clone();
+                tmp.translateX(10*i);
+                tmp.translateY(10*j);
+                earth_group.add(tmp);
+            }
+        }
+        scene.add(earth_group);
+
+        
+
+
+
+        let wall = new THREE.BoxGeometry(1, 5, 5);
+        let wall_mesh_1 = new THREE.Mesh(wall, wall_mat);
+        wall_mesh_1.position.set(0, 0, 2.5);
+
+        let wall_group1 = new THREE.Group();
+        let wall_group = new THREE.Group();
+
+        for (let i=0; i<6; i++) {
+            for (let j=0; j<6; j++) {
+                if ((1<i && i<4)&&(1<j&&j<4)) {
+                    continue;
+                }
+                let tmp = wall_mesh_1.clone();
+                tmp.translateZ(5*i);
+                tmp.translateY(5*j);
+                wall_group1.add(tmp);
+            }
+        }
+        wall_group.add(wall_group1);
+
+        let wall_group2 = wall_group1.clone();
+        wall_group2.translateX(29.5);
+        wall_group.add(wall_group2);
+
+        let wall_group3 = wall_group1.clone();
+        wall_group3.rotation.y += Math.PI * 0.5;
+        wall_group.add(wall_group3);
+
+        let wall_group4 = wall_group3.clone();
+        wall_group4.translateX(-29.5);
+        wall_group.add(wall_group4);
+
+        scene.add(wall_group);
+
+        // 床
+        let floor = new THREE.BoxGeometry(30, 0.5, 30);
+        let floor_mat = new THREE.MeshPhongMaterial({color: 0xffffff});
+        let floor_mesh = new THREE.Mesh(floor, floor_mat);
+        floor_mesh.position.set(14.5, -0.5, 14.5);
+        scene.add(floor_mesh);
+
+        // 屋根
+        let roof_group = new THREE.Group();
+        let roof_geo = new THREE.BoxGeometry(9.9, 9.9, 1, 1);
+        let roof_mat = new THREE.MeshPhongMaterial();
+        roof_mat.map = galvalume;
+        let roof_mesh = new THREE.Mesh(roof_geo, roof_mat);
+        roof_mesh.rotation.x -= Math.PI*0.5;
+        roof_mesh.position.set(4.9, 25, 4.9);
+        for (let i=0; i<3; i++) {
+            for (let j=0; j<3; j++) {
+                let tmp = roof_mesh.clone();
+                tmp.translateX(9.9*i);
+                tmp.translateY(-9.9*j);
+                roof_group.add(tmp);
+            }
+        }
+        scene.add(roof_group);
+
+        // その辺の木
+        let tree0_sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: textureLoader.load("./img/tree0.png")}));
+        let tree1_sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: textureLoader.load("./img/tree1.png")}));
+        let tree2_sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: textureLoader.load("./img/tree2.png")}));
+        let tree3_sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: textureLoader.load("./img/tree3.png")}));
+
+        let trees = [tree0_sprite, tree1_sprite, tree2_sprite, tree3_sprite];
+
+        for (let i=-3; i<3; i++) {
+            for (let j=-3; j<3; j++) {
+                let num = Math.floor(Math.random()*4);
+                console.log(num);
+                let tmp = trees[num].clone();
+                tmp.scale.set(40, 40, 40);
+
+                let x = i*30+20;
+                let z = j*30+25;
+                if ((-2<i && i<2) && (-2<j && j<2)) {
+                    continue;
+                }
+                tmp.position.set(x, 20, z);
+                scene.add(tmp);
+            }
+        }
+
+
+        // 屋根の上のペンギン
+        let pg_on_the_roof = new get_penguin();
+        pg_on_the_roof.position.set(15, 29, 15);
+        pg_on_the_roof.scale.set(3, 3, 3);
+        scene.add(pg_on_the_roof);
+
+
+
+        // 家の中で回ってるペンギン
+        let move_pg = new get_penguin();
+        move_pg.position.set(40, 2.5, 40);
+        move_pg.scale.set(3, 3, 3);
+        scene.add(move_pg);
+        let move_pg_rotate = 0;
+
+        function jump_penguin() {
+            if (jump_speed >= -0.3) {
+                pg_on_the_roof.position.y += jump_speed;
+                jump_speed -= 0.01
+            }
+            if (jump_speed < -0.3) {
+                pg_on_the_roof.position.y = 29;
+                jump_speed = jump_speed*-1;
+            }
+        }
+
+
+        // 葉っぱを散らす
+        let leaf = new THREE.Sprite(new THREE.SpriteMaterial({map: textureLoader.load("./img/6091.png")}));
+        let leaf_group = new THREE.Group();
+        for (let i=0; i<2000; i++) {
+            let tmp = leaf.clone();
+            tmp.position.set(200 * (Math.random()-0.5), 200 * (Math.random()-0.5), 200 * (Math.random()-0.5));
+            leaf_group.add(tmp);
+        }
+        scene.add(leaf_group);
+
+
+        // 肥大化して読みづらいので関数にした
+        function get_penguin() {
+
+            // いろいろなマテリアルの実験
+            let material = new THREE.MeshPhongMaterial({ color: Math.random()*65536, specular:0xffff00, shininess:4 });
+
+            // 頭を作成
+            let head_g = new THREE.SphereGeometry( 0.5, 32, 32 );
+            let head = new THREE.Mesh(head_g, material);
+            head.position.set(0,1.2,0);//allの中心が原点になる
+            head.castShadow = true;
+
+            //体を作成
+            let body_g = new THREE.SphereGeometry( 0.6, 32, 32 );
+            //let material_r = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            let body = new THREE.Mesh( body_g, material);
+            body.scale.y =1.5;
+            body.position.set(0,0,0);
+            body.castShadow = true;
+
+            //左足を作成
+            let leg_g = new THREE.SphereGeometry( 0.25, 32, 32 );
+            let l_leg = new THREE.Mesh( leg_g, material);
+            l_leg.scale.z = 2;
+            l_leg.scale.y = 0.7;
+            l_leg.position.set(0.3,-0.8,0.2);
+            l_leg.castShadow = true;
+
+            //右足を作成
+            let r_leg = new THREE.Mesh( leg_g, material);
+            r_leg.scale.z = 2;
+            r_leg.scale.y = 0.7;
+            r_leg.position.set(-0.3,-0.8,0.2);
+            r_leg.castShadow = true;
+
+            //左羽を作成
+            let win_g = new THREE.SphereGeometry( 0.7, 32, 32 );
+            let l_win = new THREE.Mesh( win_g, material);
+            l_win.scale.x = 0.2;
+            l_win.scale.z = 0.5;
+            l_win.rotation.z = 0.5;
+            l_win.position.set(0.65,0.15,0);
+            l_win.castShadow = true;
+
+            //右羽を作成
+            let r_win = new THREE.Mesh( win_g, material);
+            r_win.scale.x = 0.2;
+            r_win.scale.z = 0.5;
+            r_win.rotation.z = -0.5;
+            r_win.position.set(-0.65,0.15,0);
+            r_win.castShadow = true;
+
+            l_wing.push(l_win);
+            r_wing.push(r_win);
+
+            //くちばしの作成
+            let beak_g = new THREE.ConeGeometry( 0.1, 0.5, 32 );
+            let material_beak = new THREE.MeshPhongMaterial({ color: 0xffff00 });
+            let beak = new THREE.Mesh( beak_g, material_beak);
+            beak.rotation.x = 1.5;
+            beak.position.set(0,1,0.6);
+            beak.castShadow = true;
+
+            //左目
+            let eye_g = new THREE.SphereGeometry( 0.1, 32, 32 );
+            let material_eye = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            let l_eye = new THREE.Mesh( eye_g, material_eye);
+            l_eye.position.set(0.2,1.3,0.35);
+            l_eye.castShadow = true;
+
+            //右目
+            let r_eye = new THREE.Mesh( eye_g, material_eye);
+            r_eye.position.set(-0.2,1.3,0.35);
+            r_eye.castShadow = true;
+
+            //ペンギンのオブジェクト
+            const pengin = new THREE.Group();
+            pengin.add(head); // 頭を追加
+            pengin.add(body); //体を追加
+            pengin.add(l_leg); //左足を追加
+            pengin.add(r_leg); //右足を追加
+            pengin.add(l_win); //左羽を追加
+            pengin.add(r_win); //右羽を追加
+            pengin.add(beak); //くちばし
+            pengin.add(l_eye); //左目
+            pengin.add(r_eye); //右目
+
+            return pengin;
+        }
+
+        // ペンギンの羽を動かす
+        function penguin_motion() {
+            for (let a in l_wing) {
+                if (wing_state < 100) {
+                    l_wing[a].rotation.z += 0.005;
+                    r_wing[a].rotation.z -= 0.005;
+                    wing_state += 1;
+                } else if (wing_state < 200) {
+                    l_wing[a].rotation.z -= 0.005;
+                    r_wing[a].rotation.z += 0.005;
+                    wing_state += 1;
+                } else {
+                    wing_state = 0;
+                }
+            }
+        }
+
+        update();
+        // 毎フレーム時に実行されるループイベントです
+        function update() {
+            // レンダリング
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+
+            // 回るペンギン
+            move_pg.rotation.y += 0.1;
+            move_pg_rotate += Math.PI*0.008;
+            let x = Math.cos(move_pg_rotate)*10+15;
+            let z = Math.sin(move_pg_rotate)*10+15;
+            move_pg.position.x = x;
+            move_pg.position.z = z;
+
+            leaf_group.rotation.x += 0.1;
+            leaf_group.rotation.y += 0.1;
+
+            // ジャンプするペンギン
+            jump_penguin();
+
+            // ペンギンの羽の動き
+            penguin_motion();
+
+            // カメラの位置と距離をラベルに書き込み
+            let cp = camera.position;
+            document.getElementById("CameraPosition").textContent = "[" + cp.x.toFixed(3) + ", " + cp.y.toFixed(3) + ", " + cp.z.toFixed(3) + "]";
+        }
+
+    }
+    let l_wing = [];
+    let r_wing = [];
+    let wing_state = 0;
+    let jump_speed = 0.3;
+</script>
+
+</body>
+</html>
